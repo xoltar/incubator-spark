@@ -23,14 +23,11 @@ import scala.util.Random
 
 import org.scalatest.FunSuite
 import com.google.common.io.Files
+import org.apache.hadoop.mapreduce._
+import org.apache.hadoop.conf.{Configuration, Configurable}
 
 import org.apache.spark.SparkContext._
 import org.apache.spark.{Partitioner, SharedSparkContext}
-import org.apache.hadoop.mapreduce._
-import scala.Some
-import org.apache.hadoop.conf.{Configuration, Configurable}
-import scala.Some
-import akka.actor.Actor
 
 class PairRDDFunctionsSuite extends FunSuite with SharedSparkContext {
   test("groupByKey") {
@@ -338,26 +335,29 @@ class PairRDDFunctionsSuite extends FunSuite with SharedSparkContext {
 
   test("saveNewAPIHadoopFile should call setConf if format is configurable") {
     val pairs = sc.parallelize(Array((new Integer(1), new Integer(1))))
-    val conf = new Configuration()
 
-    //No error, non-configurable formats still work
+    // No error, non-configurable formats still work
     pairs.saveAsNewAPIHadoopFile[FakeFormat]("ignored")
 
-    //Configurable intercepts get configured
-    //ConfigTestFormat throws an exception if we try to write to it
-    //when setConf hasn't been thrown first.
-    //Assertion is in ConfigTestFormat.getRecordWriter
+    /*
+      Check that configurable formats get configured:
+      ConfigTestFormat throws an exception if we try to write
+      to it when setConf hasn't been called first.
+      Assertion is in ConfigTestFormat.getRecordWriter.
+     */
     pairs.saveAsNewAPIHadoopFile[ConfigTestFormat]("ignored")
   }
 }
 
-// These classes are fakes for testing
-// "saveNewAPIHadoopFile should call setConf if format is configurable".
-// Unfortunately, they have to be top level classes, and not defined in
-// the test method, because otherwise Scala won't generate no-args constructors
-// and the test will therefore throw InstantiationException when saveAsNewAPIHadoopFile
-// tries to instantiate them with Class.newInstance.
-class FakeWriter extends RecordWriter[Integer,Integer] {
+/*
+  These classes are fakes for testing
+    "saveNewAPIHadoopFile should call setConf if format is configurable".
+  Unfortunately, they have to be top level classes, and not defined in
+  the test method, because otherwise Scala won't generate no-args constructors
+  and the test will therefore throw InstantiationException when saveAsNewAPIHadoopFile
+  tries to instantiate them with Class.newInstance.
+ */
+class FakeWriter extends RecordWriter[Integer, Integer] {
 
   def close(p1: TaskAttemptContext) = ()
 
@@ -377,7 +377,7 @@ class FakeCommitter extends OutputCommitter {
   def abortTask(p1: TaskAttemptContext) = ()
 }
 
-class FakeFormat() extends OutputFormat[Integer,Integer]() {
+class FakeFormat() extends OutputFormat[Integer, Integer]() {
 
   def checkOutputSpecs(p1: JobContext)  = ()
 

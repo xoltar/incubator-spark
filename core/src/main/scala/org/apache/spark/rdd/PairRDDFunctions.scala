@@ -618,7 +618,7 @@ class PairRDDFunctions[K: ClassTag, V: ClassTag](self: RDD[(K, V)])
       val hadoopContext = newTaskAttemptContext(wrappedConf.value, attemptId)
       val format = outputFormatClass.newInstance
       format match {
-        case c:Configurable => c.setConf(wrappedConf.value)
+        case c: Configurable => c.setConf(wrappedConf.value)
         case _ => ()
       }
       val committer = format.getOutputCommitter(hadoopContext)
